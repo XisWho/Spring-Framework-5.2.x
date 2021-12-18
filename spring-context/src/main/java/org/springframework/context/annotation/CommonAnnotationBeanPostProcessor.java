@@ -514,17 +514,32 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 		Set<String> autowiredBeanNames;
 		String name = element.name;
 
-		if (factory instanceof AutowireCapableBeanFactory) {
+		// @Resource查找bean的代码
+		if (factory instanceof AutowireCapableBeanFactory) {	// 成立
 			AutowireCapableBeanFactory beanFactory = (AutowireCapableBeanFactory) factory;
+			// 获取依赖的描述符
 			DependencyDescriptor descriptor = element.getDependencyDescriptor();
+			// @Resource和@Autowired的区别以及它的原理
+			// 有没有自定义名字，如果有，再去判断名字是否有对应的bean
+			// fallbackToDefaultTypeMatch默认为true
+			// element.isDefaultName 是否采用默认的名字，没有使用@Resource(name="...")修改的话这项就是true
+			// factory.containsBean(name)判断容器中是否有一个名字叫做name的bean
+			// !factory.containsBean(name)为true，即根据名字找不到对应的bean，那么就会进入if代码块，根据类型进行查找
 			if (this.fallbackToDefaultTypeMatch && element.isDefaultName && !factory.containsBean(name)) {
 				autowiredBeanNames = new LinkedHashSet<>();
+				// 和@Autowired没有任何区别，都是那一套查找bean的流程
 				resource = beanFactory.resolveDependency(descriptor, requestingBeanName, autowiredBeanNames, null);
 				if (resource == null) {
 					throw new NoSuchBeanDefinitionException(element.getLookupType(), "No resolvable resource object");
 				}
 			}
+			// this.fallbackToDefaultTypeMatch && element.isDefaultName一般情况下都是true
+			// 所以如果factory.containsBean(name)为true，即容器中包含name对应的bean对象或者BeanDefinition
+			// 如果是element.isDefaultName为false导致进入了else代码块，那么一定是根据bean名称去Spring容器找，不会根据类型再找了，也没有必要根据类型找
+			// 因为@Resource(name="...")相当于说你告诉Spring要找的bean的名称必须符合我给定的名称，并且类型符合，这个一个”与“条件
 			else {
+				// 根据名字从Spring容器中获取一个对象出来完成注入
+				// 如果bean没有实例化，但是对应的BeanDefinition存在，那么Spring就会根据BeanDefinition实例化好bean并返回
 				resource = beanFactory.resolveBeanByName(name, descriptor);
 				autowiredBeanNames = Collections.singleton(name);
 			}

@@ -116,6 +116,7 @@ public class InjectionMetadata {
 				(checkedElements != null ? checkedElements : this.injectedElements);
 		if (!elementsToIterate.isEmpty()) {
 			for (InjectedElement element : elementsToIterate) {
+				// 分别调用AutowiredFieldElement或AutowiredMethodElement的inject方法
 				element.inject(target, beanName, pvs);
 			}
 		}
@@ -225,6 +226,8 @@ public class InjectionMetadata {
 			if (this.isField) {
 				Field field = (Field) this.member;
 				ReflectionUtils.makeAccessible(field);
+				// 通过反射注入
+				// getResourceToInject(target, requestingBeanName)会找到注入的对象
 				field.set(target, getResourceToInject(target, requestingBeanName));
 			}
 			else {

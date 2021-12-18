@@ -74,6 +74,7 @@ public class OrderComparator implements Comparator<Object> {
 	}
 
 	private int doCompare(@Nullable Object o1, @Nullable Object o2, @Nullable OrderSourceProvider sourceProvider) {
+		// 首先判断还有没有其他排序规则（@Order的排序其实优先级较低）
 		boolean p1 = (o1 instanceof PriorityOrdered);
 		boolean p2 = (o2 instanceof PriorityOrdered);
 		if (p1 && !p2) {
@@ -97,6 +98,7 @@ public class OrderComparator implements Comparator<Object> {
 	 */
 	private int getOrder(@Nullable Object obj, @Nullable OrderSourceProvider sourceProvider) {
 		Integer order = null;
+		// 首先判断还有没有其他排序规则（@Order的排序其实优先级较低）
 		if (obj != null && sourceProvider != null) {
 			Object orderSource = sourceProvider.getOrderSource(obj);
 			if (orderSource != null) {
@@ -142,6 +144,7 @@ public class OrderComparator implements Comparator<Object> {
 	 */
 	@Nullable
 	protected Integer findOrder(Object obj) {
+		// 是否实现了Ordered接口
 		return (obj instanceof Ordered ? ((Ordered) obj).getOrder() : null);
 	}
 

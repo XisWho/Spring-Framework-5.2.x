@@ -49,15 +49,16 @@ final class LogAdapter {
 
 	static {
 		if (isPresent(LOG4J_SPI)) {
-			if (isPresent(LOG4J_SLF4J_PROVIDER) && isPresent(SLF4J_SPI)) {
+			if (isPresent(LOG4J_SLF4J_PROVIDER) && isPresent(SLF4J_SPI)) {	// 如果提供了log4j2到slf4j的桥接器，并且提供了slf4j
 				// log4j-to-slf4j bridge -> we'll rather go with the SLF4J SPI;
 				// however, we still prefer Log4j over the plain SLF4J API since
 				// the latter does not have location awareness support.
+				// Spring作者更喜欢log4j2
 				logApi = LogApi.SLF4J_LAL;
 			}
 			else {
 				// Use Log4j 2.x directly, including location awareness support
-				logApi = LogApi.LOG4J;
+				logApi = LogApi.LOG4J;	// 可以看到log4j2优先被选用
 			}
 		}
 		else if (isPresent(SLF4J_SPI)) {
@@ -85,10 +86,13 @@ final class LogAdapter {
 	 */
 	public static Log createLog(String name) {
 		switch (logApi) {
+			// log4j2
 			case LOG4J:
 				return Log4jAdapter.createLog(name);
-			case SLF4J_LAL:
+			// slf4j-full
+			case SLF4J_LAL:	// 通过slf4j去适配当前环境具体使用的日志对象
 				return Slf4jAdapter.createLocationAwareLog(name);
+			// slf4j
 			case SLF4J:
 				return Slf4jAdapter.createLog(name);
 			default:

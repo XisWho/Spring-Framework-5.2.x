@@ -404,7 +404,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 	@Override
 	public boolean containsBean(String name) {
+		// name的合法化验证
 		String beanName = transformedBeanName(name);
+		// containsSingleton(beanName)判断当前@Resource当中的名字去单例池获取（单例池中是已经实例化好的bean）
+		// 注：90%的bean都存在于单例池当中，但是还有一些不存在，所以还需要添加containsBeanDefinition进行判断
+		// containsBeanDefinition(beanName)判断当前@Resouce的名字是否有一个与之对应的被扫描到的BeanDefinition
 		if (containsSingleton(beanName) || containsBeanDefinition(beanName)) {
 			return (!BeanFactoryUtils.isFactoryDereference(name) || isFactoryBean(name));
 		}
