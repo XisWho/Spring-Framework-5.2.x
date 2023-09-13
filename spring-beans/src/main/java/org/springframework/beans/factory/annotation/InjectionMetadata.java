@@ -265,6 +265,8 @@ public class InjectionMetadata {
 					return skip;
 				}
 				if (this.pd != null) {
+					// 当前pd是否在pvs中
+					// 如果在，说明已经通过byType或byName的逻辑进行处理了
 					if (pvs.contains(this.pd.getName())) {
 						// Explicit value provided as part of the bean definition.
 						this.skip = true;

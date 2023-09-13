@@ -118,6 +118,10 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 		if (logger.isTraceEnabled()) {
 			logger.trace("Creating JDK dynamic proxy: " + this.advised.getTargetSource());
 		}
+
+		// private final AdvisedSupport advised;
+		// advised就是我们代码中自定义的代理工厂ProxyFactory
+		// proxiedInterfaces：代理对象需要实现的接口
 		Class<?>[] proxiedInterfaces = AopProxyUtils.completeProxiedInterfaces(this.advised, true);
 		findDefinedEqualsAndHashCodeMethods(proxiedInterfaces);
 		return Proxy.newProxyInstance(classLoader, proxiedInterfaces, this);
@@ -157,10 +161,14 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 		Object oldProxy = null;
 		boolean setProxyContext = false;
 
+		// 获取目标对象（包含一些额外信息）
 		TargetSource targetSource = this.advised.targetSource;
 		Object target = null;
 
 		try {
+			/**
+			 * 目标对象的所有方法都会经过代理对象，所以要去除一些不需要代理的方法（如继承自Object的方法等）
+			 */
 			if (!this.equalsDefined && AopUtils.isEqualsMethod(method)) {
 				// The target does not implement the equals(Object) method itself.
 				return equals(args[0]);
@@ -187,12 +195,16 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 				setProxyContext = true;
 			}
 
+			// 以上这些判断不用关心
+
 			// Get as late as possible to minimize the time we "own" the target,
 			// in case it comes from a pool.
+			// 真实的目标对象
 			target = targetSource.getTarget();
 			Class<?> targetClass = (target != null ? target.getClass() : null);
 
 			// Get the interception chain for this method.
+			// 获取链
 			List<Object> chain = this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass);
 
 			// Check whether we have any advice. If we don't, we can fallback on direct

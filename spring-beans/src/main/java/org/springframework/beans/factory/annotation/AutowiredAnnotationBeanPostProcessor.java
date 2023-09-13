@@ -444,6 +444,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 		// Fall back to class name as cache key, for backwards compatibility with custom callers.
 		String cacheKey = (StringUtils.hasLength(beanName) ? beanName : clazz.getName());
 		// Quick check on the concurrent map first, with minimal locking.
+		// 从缓存中取，就是说@Autowire的信息只查找一次，后面再调用的话直接从缓存中取
 		InjectionMetadata metadata = this.injectionMetadataCache.get(cacheKey);
 		if (InjectionMetadata.needsRefresh(metadata, clazz)) {
 			synchronized (this.injectionMetadataCache) {
@@ -453,6 +454,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 						metadata.clear(pvs);
 					}
 					metadata = buildAutowiringMetadata(clazz);
+					// 缓存
 					this.injectionMetadataCache.put(cacheKey, metadata);
 				}
 			}
@@ -478,6 +480,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 				if (ann != null) {
 					if (Modifier.isStatic(field.getModifiers())) {
 						if (logger.isInfoEnabled()) {
+							// Autowired不支持静态字段的注入
 							logger.info("Autowired annotation is not supported on static fields: " + field);
 						}
 						return;
@@ -516,6 +519,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 			});
 			// 把currElements赋给elements
 			elements.addAll(0, currElements);
+			// 继续父类上的@Autowired属性的处理
 			targetClass = targetClass.getSuperclass();
 		}
 		while (targetClass != null && targetClass != Object.class);
@@ -645,10 +649,12 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 				}
 			}
 			else {
+				// 解析属性字段
 				value = resolveFieldValue(field, bean, beanName);
 			}
 			if (value != null) {
 				ReflectionUtils.makeAccessible(field);
+				// 反射注入
 				field.set(bean, value);
 			}
 		}

@@ -72,12 +72,20 @@ class ComponentScanAnnotationParser {
 		this.registry = registry;
 	}
 
-
+	// 解析配置类上面的componentScan注解
 	public Set<BeanDefinitionHolder> parse(AnnotationAttributes componentScan, String declaringClass) {
+		// Scanner2
+		// componentScan上的useDefaultFilters属性默认为true，Filter是啥？
+		// Filter分为两种过滤器：1.include（引入）；2.exclude（排除）
+		// doScan整体有两个步骤：
+		// 1.把所有类都获取到；2.判断获取到的这些类，能不能变成BeanDefinition（是不是符合规则），这个就需要过滤
+		// include过滤到（是否符合某个注解），就表示合格
 		ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(this.registry,
 				componentScan.getBoolean("useDefaultFilters"), this.environment, this.resourceLoader);
 
+		// @ComponentScan上可以配置nameGenerator，一般不配置，默认是BeanNameGenerator.class
 		Class<? extends BeanNameGenerator> generatorClass = componentScan.getClass("nameGenerator");
+		// 默认为true
 		boolean useInheritedGenerator = (BeanNameGenerator.class == generatorClass);
 		scanner.setBeanNameGenerator(useInheritedGenerator ? this.beanNameGenerator :
 				BeanUtils.instantiateClass(generatorClass));
@@ -93,11 +101,13 @@ class ComponentScanAnnotationParser {
 
 		scanner.setResourcePattern(componentScan.getString("resourcePattern"));
 
+		// 第三方的includeFilters
 		for (AnnotationAttributes filter : componentScan.getAnnotationArray("includeFilters")) {
 			for (TypeFilter typeFilter : typeFiltersFor(filter)) {
 				scanner.addIncludeFilter(typeFilter);
 			}
 		}
+		// 第三方的excludeFilters
 		for (AnnotationAttributes filter : componentScan.getAnnotationArray("excludeFilters")) {
 			for (TypeFilter typeFilter : typeFiltersFor(filter)) {
 				scanner.addExcludeFilter(typeFilter);
@@ -109,6 +119,7 @@ class ComponentScanAnnotationParser {
 			scanner.getBeanDefinitionDefaults().setLazyInit(true);
 		}
 
+		// 获取用户配置的扫描路径
 		Set<String> basePackages = new LinkedHashSet<>();
 		String[] basePackagesArray = componentScan.getStringArray("basePackages");
 		for (String pkg : basePackagesArray) {
@@ -123,6 +134,7 @@ class ComponentScanAnnotationParser {
 			basePackages.add(ClassUtils.getPackageName(declaringClass));
 		}
 
+		// 添加了一个excludeFilter
 		scanner.addExcludeFilter(new AbstractTypeHierarchyTraversingFilter(false, false) {
 			@Override
 			protected boolean matchClassName(String className) {

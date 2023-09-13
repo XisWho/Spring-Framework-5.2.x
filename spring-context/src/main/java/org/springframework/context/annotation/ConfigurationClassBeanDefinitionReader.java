@@ -128,6 +128,7 @@ class ConfigurationClassBeanDefinitionReader {
 	private void loadBeanDefinitionsForConfigurationClass(
 			ConfigurationClass configClass, TrackedConditionEvaluator trackedConditionEvaluator) {
 
+		// 一般不会跳过，这里的逻辑不用关心
 		if (trackedConditionEvaluator.shouldSkip(configClass)) {
 			String beanName = configClass.getBeanName();
 			if (StringUtils.hasLength(beanName) && this.registry.containsBeanDefinition(beanName)) {
@@ -137,7 +138,9 @@ class ConfigurationClassBeanDefinitionReader {
 			return;
 		}
 
+		// 根据ImportBy来判断
 		if (configClass.isImported()) {
+			// 如果是@Import进来的，则放到BeanDefinitionMap中
 			registerBeanDefinitionForImportedConfigurationClass(configClass);
 		}
 		for (BeanMethod beanMethod : configClass.getBeanMethods()) {
@@ -162,6 +165,9 @@ class ConfigurationClassBeanDefinitionReader {
 
 		BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(configBeanDef, configBeanName);
 		definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
+		// 注册到BeanDefinitionMap中
+		// BeanDefinition中并没有保存Bean的Name，原因是一般是根据BeanName去找BeanDefinition（map结构），如果往BeanDefinition中保存BeanName就有点奇怪
+		// 用了BeanDefinitionHolder保存BeanName和BeanDefinition
 		this.registry.registerBeanDefinition(definitionHolder.getBeanName(), definitionHolder.getBeanDefinition());
 		configClass.setBeanName(configBeanName);
 

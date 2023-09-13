@@ -75,6 +75,7 @@ class ConfigurationClassEnhancer {
 	// The callbacks to use. Note that these callbacks must be stateless.
 	private static final Callback[] CALLBACKS = new Callback[] {
 			new BeanMethodInterceptor(),
+			// cglib会为代理类添加一个BeanFactory属性，
 			new BeanFactoryAwareMethodInterceptor(),
 			NoOp.INSTANCE
 	};
@@ -95,6 +96,7 @@ class ConfigurationClassEnhancer {
 	 * @return the enhanced subclass
 	 */
 	public Class<?> enhance(Class<?> configClass, @Nullable ClassLoader classLoader) {
+		// 判断是否已经被代理了
 		if (EnhancedConfiguration.class.isAssignableFrom(configClass)) {
 			if (logger.isDebugEnabled()) {
 				logger.debug(String.format("Ignoring request to enhance %s as it has " +
@@ -118,12 +120,18 @@ class ConfigurationClassEnhancer {
 	 * Creates a new CGLIB {@link Enhancer} instance.
 	 */
 	private Enhancer newEnhancer(Class<?> configSuperClass, @Nullable ClassLoader classLoader) {
+		// cglib设置代理类逻辑
 		Enhancer enhancer = new Enhancer();
+		// 设置父类
 		enhancer.setSuperclass(configSuperClass);
+		// 设置接口，用来判断是否被代理了
 		enhancer.setInterfaces(new Class<?>[] {EnhancedConfiguration.class});
 		enhancer.setUseFactory(false);
 		enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
+		// 主要是为代理类设置beanFactory属性，代理类中需要有一个beanFactory，用来判断当前是否已经将父类添加到Spring中了
 		enhancer.setStrategy(new BeanFactoryAwareGeneratorStrategy(classLoader));
+		// setCallback和setCallbackFilter的区别是setCallback会默认为所有方法增强，setCallbackFilter会过滤掉一些方法
+		// 因为Spring中主要增强加了@Bean的方法（但是如果是setBeanFactory方法上加了@Bean，那么setBeanFactory是不会增强的）
 		enhancer.setCallbackFilter(CALLBACK_FILTER);
 		enhancer.setCallbackTypes(CALLBACK_FILTER.getCallbackTypes());
 		return enhancer;
@@ -189,6 +197,9 @@ class ConfigurationClassEnhancer {
 		public int accept(Method method) {
 			for (int i = 0; i < this.callbacks.length; i++) {
 				Callback callback = this.callbacks[i];
+				// 这里的话不是由这个ConditionalCallbackFilter来决定调用哪个Callback
+				// 而是由Callback判断这个方法是否判断Callback的要求来决定是否调用这个Callback
+				// 不是ConditionalCallback的话就不一定有isMatch方法
 				if (!(callback instanceof ConditionalCallback) || ((ConditionalCallback) callback).isMatch(method)) {
 					return i;
 				}

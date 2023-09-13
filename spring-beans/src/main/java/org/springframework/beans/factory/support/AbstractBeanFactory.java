@@ -243,10 +243,12 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			String name, @Nullable Class<T> requiredType, @Nullable Object[] args, boolean typeCheckOnly)
 			throws BeansException {
 
+		// 验证BeanName的合法性
 		String beanName = transformedBeanName(name);
 		Object bean;
 
 		// Eagerly check singleton cache for manually registered singletons.
+		// 从单例池里拿，相当于判断了这个Bean是否已经被创建了
 		Object sharedInstance = getSingleton(beanName);
 		if (sharedInstance != null && args == null) {
 			if (logger.isTraceEnabled()) {
@@ -299,6 +301,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				checkMergedBeanDefinition(mbd, beanName, args);
 
 				// Guarantee initialization of beans that the current bean depends on.
+				// 处理@DependsOn注解
 				String[] dependsOn = mbd.getDependsOn();
 				if (dependsOn != null) {
 					for (String dep : dependsOn) {
@@ -321,6 +324,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				if (mbd.isSingleton()) {
 					sharedInstance = getSingleton(beanName, () -> {
 						try {
+							// 核心
 							return createBean(beanName, mbd, args);
 						}
 						catch (BeansException ex) {
@@ -1316,6 +1320,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * @return a (potentially merged) RootBeanDefinition for the given bean
 	 * @throws BeanDefinitionStoreException in case of an invalid bean definition
 	 */
+	// containingBd:嵌套Bean，Bean里边再声明Bean
 	protected RootBeanDefinition getMergedBeanDefinition(
 			String beanName, BeanDefinition bd, @Nullable BeanDefinition containingBd)
 			throws BeanDefinitionStoreException {
@@ -1331,9 +1336,13 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 			if (mbd == null || mbd.stale) {
 				previous = mbd;
+				// 顶层Root BeanDefinition是不需要Merge的
 				if (bd.getParentName() == null) {
 					// Use copy of given root bean definition.
 					if (bd instanceof RootBeanDefinition) {
+						// 复制一份，因为子BeanDefinition会与父BeanDefinition进行合并
+						// 防止合并修改了父BeanDefinition的定义，因为父Bean需要根据父BeanDefinition
+						// 进行生成的
 						mbd = ((RootBeanDefinition) bd).cloneBeanDefinition();
 					}
 					else {
@@ -1346,6 +1355,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					try {
 						String parentBeanName = transformedBeanName(bd.getParentName());
 						if (!beanName.equals(parentBeanName)) {
+							// 取parent的MergedBeanDefinition，递归操作
 							pbd = getMergedBeanDefinition(parentBeanName);
 						}
 						else {
@@ -1365,8 +1375,12 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 								"Could not resolve parent bean definition '" + bd.getParentName() + "'", ex);
 					}
 					// Deep copy with overridden values.
+					// 获取到parent的BeanDefinition
 					mbd = new RootBeanDefinition(pbd);
+					// 合并
+					// 使用子bd去覆盖父pbd
 					mbd.overrideFrom(bd);
+					// 从这里看出，子bd最后还是变成了RootBeanDefinition
 				}
 
 				// Set default singleton scope, if not configured before.
@@ -1478,6 +1492,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				return AccessController.doPrivileged((PrivilegedExceptionAction<Class<?>>)
 						() -> doResolveBeanClass(mbd, typesToMatch), getAccessControlContext());
 			}
+			// 走这里
 			else {
 				return doResolveBeanClass(mbd, typesToMatch);
 			}
@@ -1498,10 +1513,12 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	private Class<?> doResolveBeanClass(RootBeanDefinition mbd, Class<?>... typesToMatch)
 			throws ClassNotFoundException {
 
-		ClassLoader beanClassLoader = getBeanClassLoader();
-		ClassLoader dynamicLoader = beanClassLoader;
+		// 两个ClassLoader
+		ClassLoader beanClassLoader = getBeanClassLoader();	 // AppClassLoader
+		ClassLoader dynamicLoader = beanClassLoader;	// 不用管dynamicLoader
 		boolean freshResolve = false;
 
+		// 跳过
 		if (!ObjectUtils.isEmpty(typesToMatch)) {
 			// When just doing type checks (i.e. not creating an actual instance yet),
 			// use the specified temporary class loader (e.g. in a weaving scenario).
@@ -1552,6 +1569,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		}
 
 		// Resolve regularly, caching the result in the BeanDefinition...
+		// 直接看这里
 		return mbd.resolveBeanClass(beanClassLoader);
 	}
 

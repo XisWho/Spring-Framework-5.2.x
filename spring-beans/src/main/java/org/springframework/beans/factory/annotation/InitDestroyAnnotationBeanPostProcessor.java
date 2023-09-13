@@ -152,6 +152,7 @@ public class InitDestroyAnnotationBeanPostProcessor
 
 	@Override
 	public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+		// 处理注解版的@PostConstructor（最先回调）
 		LifecycleMetadata metadata = findLifecycleMetadata(bean.getClass());
 		try {
 			metadata.invokeInitMethods(bean, beanName);
@@ -217,6 +218,14 @@ public class InitDestroyAnnotationBeanPostProcessor
 	}
 
 	private LifecycleMetadata buildLifecycleMetadata(final Class<?> clazz) {
+		// InitDestroyAnnotationBeanPostProcessor的子类CommonAnnotationBeanPostProcessor
+		// 在构造方法中，初始化了initAnnotationType和destroyAnnotationType
+		// public CommonAnnotationBeanPostProcessor() {
+		//		setOrder(Ordered.LOWEST_PRECEDENCE - 3);
+		//		setInitAnnotationType(PostConstruct.class);
+		//		setDestroyAnnotationType(PreDestroy.class);
+		//		ignoreResourceType("javax.xml.ws.WebServiceContext");
+		//	}
 		if (!AnnotationUtils.isCandidateClass(clazz, Arrays.asList(this.initAnnotationType, this.destroyAnnotationType))) {
 			return this.emptyLifecycleMetadata;
 		}
@@ -230,8 +239,10 @@ public class InitDestroyAnnotationBeanPostProcessor
 			final List<LifecycleElement> currDestroyMethods = new ArrayList<>();
 
 			ReflectionUtils.doWithLocalMethods(targetClass, method -> {
+				// 这里
 				if (this.initAnnotationType != null && method.isAnnotationPresent(this.initAnnotationType)) {
 					LifecycleElement element = new LifecycleElement(method);
+					// 添加到currInitMethods
 					currInitMethods.add(element);
 					if (logger.isTraceEnabled()) {
 						logger.trace("Found init method on class [" + clazz.getName() + "]: " + method);

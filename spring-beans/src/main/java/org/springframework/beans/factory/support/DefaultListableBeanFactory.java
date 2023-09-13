@@ -872,6 +872,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 		// Trigger initialization of all non-lazy singleton beans...
 		for (String beanName : beanNames) {
+			// 根据名字从mergedBeanDefinitions Map中获取一个BeanDefinition
+			// mergedBeanDefinitions先暂时理解为等同于BeanDefinitiohMap
 			RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
 			if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {
 				if (isFactoryBean(beanName)) {
@@ -931,6 +933,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 		if (beanDefinition instanceof AbstractBeanDefinition) {
 			try {
+				// 校验
 				((AbstractBeanDefinition) beanDefinition).validate();
 			}
 			catch (BeanDefinitionValidationException ex) {
@@ -940,7 +943,10 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		}
 
 		BeanDefinition existingDefinition = this.beanDefinitionMap.get(beanName);
+		// 是否已经注册过
 		if (existingDefinition != null) {
+			// 是否允许重写BeanDefinition，默认为true
+			// 在Spring Boot2.1之后，会被人为改为false
 			if (!isAllowBeanDefinitionOverriding()) {
 				throw new BeanDefinitionOverrideException(beanName, beanDefinition, existingDefinition);
 			}
@@ -980,9 +986,12 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 					removeManualSingletonName(beanName);
 				}
 			}
+			// 走这里
 			else {
 				// Still in startup registration phase
 				this.beanDefinitionMap.put(beanName, beanDefinition);
+				// beanDefinitionNames是一个ArrayList
+				// 后续在初始化Bean时，会根据这个Bean名称的顺序进行迭代，按序初始化
 				this.beanDefinitionNames.add(beanName);
 				removeManualSingletonName(beanName);
 			}
@@ -1213,6 +1222,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		if (Optional.class == descriptor.getDependencyType()) {
 			return createOptionalDependency(descriptor, requestingBeanName);
 		}
+		// 是否延迟查找
 		else if (ObjectFactory.class == descriptor.getDependencyType() ||
 				ObjectProvider.class == descriptor.getDependencyType()) {
 			return new DependencyObjectProvider(descriptor, requestingBeanName);
@@ -1220,7 +1230,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		else if (javaxInjectProviderClass == descriptor.getDependencyType()) {
 			return new Jsr330Factory().createDependencyProvider(descriptor, requestingBeanName);
 		}
+		// 默认走这里
 		else {
+			// result为空
 			Object result = getAutowireCandidateResolver().getLazyResolutionProxyIfNecessary(
 					descriptor, requestingBeanName);
 			if (result == null) {
@@ -1273,6 +1285,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 			// 单个bean的注入，查找相关类型的bean，有可能找到多个
 			// 需要注意的是这里的多个结果和上面的支持多个注入不是同一回事
+			// beanName：需要被注入依赖的bean
+			// type：注入依赖的类型
 			Map<String, Object> matchingBeans = findAutowireCandidates(beanName, type, descriptor);
 			if (matchingBeans.isEmpty()) {
 				if (isRequired(descriptor)) {

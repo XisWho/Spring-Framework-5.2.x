@@ -60,11 +60,11 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 	@Override
 	public Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner) {
 		// Don't override the class with CGLIB if no overrides.
-		if (!bd.hasMethodOverrides()) {
+		if (!bd.hasMethodOverrides()) {	// true
 			Constructor<?> constructorToUse;
 			synchronized (bd.constructorArgumentLock) {
 				constructorToUse = (Constructor<?>) bd.resolvedConstructorOrFactoryMethod;
-				if (constructorToUse == null) {
+				if (constructorToUse == null) {	// true
 					final Class<?> clazz = bd.getBeanClass();
 					if (clazz.isInterface()) {
 						throw new BeanInstantiationException(clazz, "Specified class is an interface");
@@ -75,8 +75,10 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 									(PrivilegedExceptionAction<Constructor<?>>) clazz::getDeclaredConstructor);
 						}
 						else {
+							// 获取无参构造器
 							constructorToUse = clazz.getDeclaredConstructor();
 						}
+						// 保存实例化Bean需要的方法
 						bd.resolvedConstructorOrFactoryMethod = constructorToUse;
 					}
 					catch (Throwable ex) {
@@ -84,6 +86,7 @@ public class SimpleInstantiationStrategy implements InstantiationStrategy {
 					}
 				}
 			}
+			// 利用反射进行newInstance
 			return BeanUtils.instantiateClass(constructorToUse);
 		}
 		else {

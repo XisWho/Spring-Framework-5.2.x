@@ -126,7 +126,9 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 */
 	public void setBeanNameGenerator(BeanNameGenerator beanNameGenerator) {
 		this.reader.setBeanNameGenerator(beanNameGenerator);
+		// Scanner1 会使用你通过容器对象设置的BeanNameGenerator
 		this.scanner.setBeanNameGenerator(beanNameGenerator);
+		// beanNameGenerator 会放到单例池中
 		getBeanFactory().registerSingleton(
 				AnnotationConfigUtils.CONFIGURATION_BEAN_NAME_GENERATOR, beanNameGenerator);
 	}

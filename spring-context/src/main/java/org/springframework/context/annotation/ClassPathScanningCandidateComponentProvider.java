@@ -203,6 +203,7 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	 *
 	 */
 	@SuppressWarnings("unchecked")
+	// 添加了三个AnnotationTypeFilter
 	protected void registerDefaultFilters() {
 		this.includeFilters.add(new AnnotationTypeFilter(Component.class));
 		ClassLoader cl = ClassPathScanningCandidateComponentProvider.class.getClassLoader();
@@ -310,9 +311,11 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	 */
 	public Set<BeanDefinition> findCandidateComponents(String basePackage) {
 		if (this.componentsIndex != null && indexSupportsIncludeFilters()) {
+			// 这里是加索引，现在一般不用了
 			return addCandidateComponentsFromIndex(this.componentsIndex, basePackage);
 		}
 		else {
+			// 走这里
 			return scanCandidateComponents(basePackage);
 		}
 	}
@@ -415,6 +418,8 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 
 	private Set<BeanDefinition> scanCandidateComponents(String basePackage) {
 		Set<BeanDefinition> candidates = new LinkedHashSet<>();
+
+		// 原理：通过包名获取包所在的路径，然后得到一个文件夹对象（或者是流）
 		try {
 			String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +
 					resolveBasePackage(basePackage) + '/' + this.resourcePattern;
@@ -426,7 +431,9 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 					logger.trace("Scanning " + resource);
 				}
 				try {
+					// ASM技术
 					MetadataReader metadataReader = getMetadataReaderFactory().getMetadataReader(resource);
+					// 判断是否被排除，是否加了必要的注解
 					if (isCandidateComponent(metadataReader)) {
 						ScannedGenericBeanDefinition sbd = new ScannedGenericBeanDefinition(metadataReader);
 						sbd.setSource(resource);
@@ -485,6 +492,7 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	 * @return whether the class qualifies as a candidate component
 	 */
 	protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOException {
+		// 当它扫描到一个类的时候首先判断这个类有没有被排除
 		for (TypeFilter tf : this.excludeFilters) {
 			if (tf.match(metadataReader, getMetadataReaderFactory())) {
 				return false;

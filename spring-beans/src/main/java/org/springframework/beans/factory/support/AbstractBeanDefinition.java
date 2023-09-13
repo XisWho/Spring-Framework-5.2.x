@@ -321,6 +321,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 			if (otherAbd.hasConstructorArgumentValues()) {
 				getConstructorArgumentValues().addArgumentValues(other.getConstructorArgumentValues());
 			}
+			// 属性的添加
 			if (otherAbd.hasPropertyValues()) {
 				getPropertyValues().addPropertyValues(other.getPropertyValues());
 			}
@@ -466,6 +467,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 		if (className == null) {
 			return null;
 		}
+		// classLoader加载类
 		Class<?> resolvedClass = ClassUtils.forName(className, classLoader);
 		this.beanClass = resolvedClass;
 		return resolvedClass;

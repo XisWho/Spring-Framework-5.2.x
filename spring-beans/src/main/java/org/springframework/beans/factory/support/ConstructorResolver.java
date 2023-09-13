@@ -133,12 +133,14 @@ class ConstructorResolver {
 		ArgumentsHolder argsHolderToUse = null;
 		Object[] argsToUse = null;
 
+		// 如果传了构造参数
 		if (explicitArgs != null) {
 			argsToUse = explicitArgs;
 		}
 		else {
 			Object[] argsToResolve = null;
 			synchronized (mbd.constructorArgumentLock) {
+				// constructorToUse为null
 				constructorToUse = (Constructor<?>) mbd.resolvedConstructorOrFactoryMethod;
 				if (constructorToUse != null && mbd.constructorArgumentsResolved) {
 					// Found a cached constructor...
@@ -148,6 +150,7 @@ class ConstructorResolver {
 					}
 				}
 			}
+			// argsToResolve为null
 			if (argsToResolve != null) {
 				argsToUse = resolvePreparedArguments(beanName, mbd, bw, constructorToUse, argsToResolve);
 			}
@@ -160,6 +163,8 @@ class ConstructorResolver {
 				Class<?> beanClass = mbd.getBeanClass();
 				try {
 					candidates = (mbd.isNonPublicAccessAllowed() ?
+							// getDeclaredConstructors返回所有的构造器
+							// getConstructors返回public构造器
 							beanClass.getDeclaredConstructors() : beanClass.getConstructors());
 				}
 				catch (Throwable ex) {
@@ -197,6 +202,7 @@ class ConstructorResolver {
 				minNrOfArgs = resolveConstructorArguments(beanName, mbd, bw, cargs, resolvedValues);
 			}
 
+			// 排序
 			AutowireUtils.sortConstructors(candidates);
 			int minTypeDiffWeight = Integer.MAX_VALUE;
 			Set<Constructor<?>> ambiguousConstructors = null;
@@ -215,11 +221,13 @@ class ConstructorResolver {
 				}
 
 				ArgumentsHolder argsHolder;
+				// 获取参数的类型
 				Class<?>[] paramTypes = candidate.getParameterTypes();
 				if (resolvedValues != null) {
 					try {
 						String[] paramNames = ConstructorPropertiesChecker.evaluate(candidate, parameterCount);
 						if (paramNames == null) {
+							// 获取参数的名称
 							ParameterNameDiscoverer pnd = this.beanFactory.getParameterNameDiscoverer();
 							if (pnd != null) {
 								paramNames = pnd.getParameterNames(candidate);

@@ -159,10 +159,15 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 	@Nullable
 	public Object proceed() throws Throwable {
 		// We start with an index of -1 and increment early.
+		// 开始时currentInterceptorIndex是-1
+		// interceptorsAndDynamicMethodMatchers就是chain
+		// 这行代码的意思就是判断chain上是否还有增强器
 		if (this.currentInterceptorIndex == this.interceptorsAndDynamicMethodMatchers.size() - 1) {
+			// 如果没有就执行目标对象的目标方法（通过反射执行，不需要看）
 			return invokeJoinpoint();
 		}
 
+		// currentInterceptorIndex增加
 		Object interceptorOrInterceptionAdvice =
 				this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
 		if (interceptorOrInterceptionAdvice instanceof InterceptorAndDynamicMethodMatcher) {
@@ -177,6 +182,7 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 			else {
 				// Dynamic matching failed.
 				// Skip this interceptor and invoke the next in the chain.
+				// 递归执行
 				return proceed();
 			}
 		}
@@ -184,6 +190,15 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 			// It's an interceptor, so we just invoke it: The pointcut will have
 			// been evaluated statically before this object was constructed.
 			return ((MethodInterceptor) interceptorOrInterceptionAdvice).invoke(this);
+			// public class BeforeAdvice implements MethodInterceptor {
+			//   //为什么需要穿这个对象MethodInvocation
+			//   //为了执行链上的下一个增强器
+			//   @Override
+			//   public Object invoke(MethodInvocation invocation) throws Throwable { // 参数invocation就是ReflectiveMethodInvocation
+			//      log.debug("Before the method...")
+			//      return invocation.proceed();  // 继续执行这个ReflectiveMethodInvocation的proceed方法
+			//   }
+			// }
 		}
 	}
 

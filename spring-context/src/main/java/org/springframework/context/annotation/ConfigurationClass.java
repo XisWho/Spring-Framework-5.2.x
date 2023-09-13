@@ -45,6 +45,8 @@ import org.springframework.util.ClassUtils;
  * @since 3.0
  * @see BeanMethod
  * @see ConfigurationClassParser
+ *
+ * 用来描述配置类的，相当于把配置类进行了解析，将解析的信息保存在ConfigurationClass中，后面根据这个ConfigurationClass进行操作就OK了
  */
 final class ConfigurationClass {
 
@@ -55,13 +57,17 @@ final class ConfigurationClass {
 	@Nullable
 	private String beanName;
 
+	// 这个配置类是被谁（可以有多个，但正常情况下只有一个）import进来的
 	private final Set<ConfigurationClass> importedBy = new LinkedHashSet<>(1);
-
+	// 当前配置类当中所有的@Bean method
 	private final Set<BeanMethod> beanMethods = new LinkedHashSet<>();
-
+	// XML
 	private final Map<String, Class<? extends BeanDefinitionReader>> importedResources =
 			new LinkedHashMap<>();
-
+	// 当前配置类上面所有Import的类的类型为ImportBeanDefinitionRegistrar的对象
+	// 比如说 class K implements ImportBeanDefinitionRegistrar
+	// 那么会将K实例化成对象，并放到关联配置类（加了@Import(K.class)）的描述类的importBeanDefinitionRegistrars Map中
+	// 注意，这里放的是ImportBeanDefinitionRegistrar对象
 	private final Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> importBeanDefinitionRegistrars =
 			new LinkedHashMap<>();
 

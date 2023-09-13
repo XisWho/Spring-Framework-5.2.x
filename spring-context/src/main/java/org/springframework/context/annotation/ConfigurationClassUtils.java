@@ -91,6 +91,7 @@ abstract class ConfigurationClassUtils {
 		}
 
 		AnnotationMetadata metadata;
+		// 一般自己添加的都是通过注解方式，所以会进到这里
 		if (beanDef instanceof AnnotatedBeanDefinition &&
 				className.equals(((AnnotatedBeanDefinition) beanDef).getMetadata().getClassName())) {
 			// Can reuse the pre-parsed metadata from the given BeanDefinition...
@@ -100,6 +101,7 @@ abstract class ConfigurationClassUtils {
 			// Check already loaded Class if present...
 			// since we possibly can't even load the class file for this Class.
 			Class<?> beanClass = ((AbstractBeanDefinition) beanDef).getBeanClass();
+			// 过滤Spring内置的配置类
 			if (BeanFactoryPostProcessor.class.isAssignableFrom(beanClass) ||
 					BeanPostProcessor.class.isAssignableFrom(beanClass) ||
 					AopInfrastructureBean.class.isAssignableFrom(beanClass) ||
@@ -122,8 +124,10 @@ abstract class ConfigurationClassUtils {
 			}
 		}
 
+		// config有两种情况：1.加了Configuration；2没有加Configuration
 		Map<String, Object> config = metadata.getAnnotationAttributes(Configuration.class.getName());
 		if (config != null && !Boolean.FALSE.equals(config.get("proxyBeanMethods"))) {
+			// 加了Configuration && Configuration.proxyBeanMethods = true(默认就是true)
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
 		else if (config != null || isConfigurationCandidate(metadata)) {
